@@ -31,8 +31,9 @@ function fromGo(port, str, replier) {
 const nodePort = registerPortHandler(toSwingSet);
 agcc.runAG_COSMOS(nodePort, fromGo, process.argv.slice(1));
 
-let globalHandler, globalSetStorage;
+let deliverInbound;
 async function toSwingSet(action, replier) {
+  console.log(`toSwingSet`, action, replier);
   if (action.type === 'AG_COSMOS_INIT') {
     return true;
   }
@@ -42,37 +43,41 @@ async function toSwingSet(action, replier) {
     throw `Unknown action type ${action.type}`;
   }
 
-  if (globalHandler) {
-    if (action.storagePort) {
-      // Initialize the storage for this particular transaction.
-      globalSetStorage(makeStorage(action.storagePort));
-    }
-    return await globalHandler(action);
+  // todo: can this storagePort change for every single message?
+  let sPort;
+
+  if (action.storagePort) {
+    // Initialize the storage for this particular transaction.
+    sPort = action.storagePort;
   }
 
-  const sPort = action.storagePort;
-  const {handler, setStorage} = await launch();
-  globalHandler = handler;
-  globalSetStorage = setStorage;
-  
-  // Initialize the kernel state by reading the storage.
-  setStorage(makeStorage(sPort));
-  // console.log('Sending SDK_READY');
-  const ret = await handler({type: 'SDK_READY'});
-  return await handler(action);
-}
+  // launch the swingset once
+  if (!deliverInbound) {
+    // this object is used to store the mailbox state. we only ever use
+    // key='mailbox'
+    const storage = {
+      has(key) {
+        return agcc.send(sPort, JSON.stringify({method: "has", key}));
+      },
+      set(key, value) {
+        return agcc.send(sPort, JSON.stringify({method: "set", key, value}));
+      },
+      get(key) {
+        return agcc.send(sPort, JSON.stringify({method: "get", key}));
+      },
+    };
 
-// Generate a storage object for the port.
-function makeStorage(sPort) {
-  return {
-    has(key) {
-      return agcc.send(sPort, JSON.stringify({method: "has", key}));
-    },
-    set(key, value) {
-      return agcc.send(sPort, JSON.stringify({method: "set", key, value}));
-    },
-    get(key) {
-      return agcc.send(sPort, JSON.stringify({method: "get", key}));
-    },
-  };
+    // this object is used by the kvstores and keepers for all other kernel
+    // state
+    const externalStorage = {
+      sendMsg(msg) {
+        return agcc.send(sPort, msg);
+      },
+    };
+
+    const s = await launch(storage, externalStorage);
+    deliverInbound = s.deliverInbound;
+  }
+
+  return await deliverInbound(action.peer, action.messages, action.ack);
 }
