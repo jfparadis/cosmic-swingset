@@ -65,9 +65,9 @@ async function toSwingSet(action, replier) {
 
   // launch the swingset once
   if (!deliverInbound) {
-    // this object is used to store the mailbox state. we only ever use
-    // key='mailbox'
-    const mailboxStorage = {
+    // this object is used to store the mailbox and user state. we use
+    // key='mailbox' and key='user'
+    const publicStorage = {
       has(key) {
         // x/swingset/storage.go returns "true" or "false"
         const retStr = agcc.send(sPort, stringify({method: "has", key}));
@@ -97,7 +97,7 @@ async function toSwingSet(action, replier) {
 
     const vatsdir = path.resolve(__dirname, '../lib/ag-solo/vats');
     const argv = [`--role=${ROLE}`, bootAddress];
-    const d = launch(mailboxStorage, stateFile, vatsdir, argv);
+    const d = launch(publicStorage, stateFile, vatsdir, argv);
 
     d.then(undefined,
            rej => {

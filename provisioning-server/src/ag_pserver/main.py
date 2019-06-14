@@ -8,7 +8,6 @@ import treq
 import os.path
 import os
 import json
-import subprocess
 
 from twisted.python import log
 import sys
@@ -147,8 +146,6 @@ class RequestCode(resource.Resource):
         try:
             resp = yield treq.post(controller_url, m.encode('utf-8'),
                                    headers={b'Content-Type': [b'application/json']})
-            if resp.code < 200 or resp.code >= 300:
-                raise Exception('invalid response code ' + resp.code)
             rawResp = yield treq.json_content(resp)
         except Exception as e:
             print('controller error', e)
@@ -186,7 +183,6 @@ class RequestCode(resource.Resource):
         d = w.get_message()
         d.addCallback(self.got_message, nickname.decode('utf-8'))
         d.addCallback(self.send_provisioning_response, w)
-
 
         html = yield flattenString(None, ResponseElement(code))
         defer.returnValue(html)
