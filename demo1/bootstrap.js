@@ -1,4 +1,5 @@
 import harden from '@agoric/harden';
+import { soloKey } from './solo-key.js';
 
 console.log(`loading bootstrap.js`);
 
@@ -15,7 +16,7 @@ export default function setup(syscall, state, helpers) {
           await E(vats.comms).init(vats.vattp);
           const m = await E(vats.mint).makeMint();
           const purse1 = await E(m).mint(100, 'purse1');
-          await E(vats.comms).addEgress('solo', 1, purse1);
+          await E(vats.comms).addEgress(soloKey, 1, purse1);
           console.log('all vats initialized');
         },
       }),
