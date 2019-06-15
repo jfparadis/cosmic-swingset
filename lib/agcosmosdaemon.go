@@ -97,12 +97,13 @@ func ReplyToGo(replyPort C.int, isError C.int, str C.Body) C.int {
 //export SendToGo
 func SendToGo(port C.int, str C.Body) C.Body {
 	goStr := C.GoString(str)
-	// fmt.Fprintln(os.Stderr, "Send to Go", goStr)
+	//fmt.Fprintln(os.Stderr, "Send to Go", goStr)
 	outstr, err := swingset.ReceiveFromNode(int(port), goStr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Cannot receive from node", err)
+		//fmt.Fprintln(os.Stderr, "Cannot receive from node", goStr, err)
 		return C.CString("")
 	}
+	//fmt.Fprintln(os.Stderr, " got from SendtoGo", outstr);
 	return C.CString(outstr)
 }
 
