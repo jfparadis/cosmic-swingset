@@ -4,6 +4,7 @@
 require = require('esm')(module);
 
 const { launch } = require('./launch-chain');
+const stringify = require('@agoric/swingset-vat/src/kernel/json-stable-stringify').default;
 
 const agcc = require('bindings')('agcosmosdaemon.node');
 //console.log('Have AG_COSMOS', agcc);
@@ -32,6 +33,11 @@ const nodePort = registerPortHandler(toSwingSet);
 agcc.runAG_COSMOS(nodePort, fromGo, process.argv.slice(1));
 
 let deliverInbound;
+// this storagePort changes for every single message. We define it out here
+// so the 'externalStorage' object can close over the single mutable
+// instance, and we update the 'sPort' value each time toSwingSet is called
+let sPort;
+
 async function toSwingSet(action, replier) {
   console.log(`toSwingSet`, action, replier);
   if (action.type === 'AG_COSMOS_INIT') {
@@ -43,11 +49,9 @@ async function toSwingSet(action, replier) {
     throw `Unknown action type ${action.type}`;
   }
 
-  // todo: can this storagePort change for every single message?
-  let sPort;
-
   if (action.storagePort) {
     // Initialize the storage for this particular transaction.
+    //console.log(` setting sPort to`, action.storagePort);
     sPort = action.storagePort;
   }
 
@@ -57,13 +61,29 @@ async function toSwingSet(action, replier) {
     // key='mailbox'
     const storage = {
       has(key) {
-        return agcc.send(sPort, JSON.stringify({method: "has", key}));
+        // x/swingset/storage.go returns "true" or "false"
+        const retStr = agcc.send(sPort, stringify({method: "has", key}));
+        const ret = JSON.parse(retStr)
+        if (Boolean(ret) !== ret) {
+          throw new Error(`agcc.send(has) returned ${ret} not Boolean`);
+        }
+        return ret;
       },
       set(key, value) {
-        return agcc.send(sPort, JSON.stringify({method: "set", key, value}));
+        if (value !== `${value}`) {
+          throw new Error(`golang storage API only takes string values, not '${JSON.stringify(value)}'`);
+        }
+        const encodedValue = stringify(value);
+        agcc.send(sPort, stringify({method: "set", key, value: encodedValue}));
       },
       get(key) {
-        return agcc.send(sPort, JSON.stringify({method: "get", key}));
+        const retStr = agcc.send(sPort, stringify({method: "get", key}));
+        //console.log(`s.get(${key}) retstr=${retstr}`);
+        const encodedValue = JSON.parse(retStr);
+        //console.log(` encodedValue=${encodedValue}`);
+        const value = JSON.parse(encodedValue);
+        //console.log(` value=${value}`);
+        return value;
       },
     };
 
@@ -71,13 +91,26 @@ async function toSwingSet(action, replier) {
     // state
     const externalStorage = {
       sendMsg(msg) {
+        //console.log(`agcc.send to`, sPort);
         return agcc.send(sPort, msg);
       },
     };
 
-    const s = await launch(storage, externalStorage);
+    const d = launch(storage, externalStorage);
+    d.then(undefined,
+           rej => {
+             console.log(`launch failed`, rej);
+             throw rej;
+           });
+    const s = await d;
     deliverInbound = s.deliverInbound;
   }
 
-  return await deliverInbound(action.peer, action.messages, action.ack);
+  const d = deliverInbound(action.peer, action.messages, action.ack);
+  d.then(undefined,
+         rej => {
+           console.log(`deliverInbound failed`, rej);
+           throw rej;
+         });
+  return await d;
 }
