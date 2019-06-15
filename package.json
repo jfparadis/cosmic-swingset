@@ -11,7 +11,8 @@
   "author": "Agoric",
   "license": "Apache-2.0",
   "dependencies": {
-    "@agoric/swingset-vat": "^0.0.11",
+    "@agoric/evaluate": "file:../SwingSet/agoric-evaluate/agoric-evaluate-0.0.1.tgz",
+    "@agoric/swingset-vat": "file:../SwingSet/agoric-swingset-vat-0.0.12.tgz",
     "@iarna/toml": "^2.2.3",
     "bindings": "^1.2.1",
     "deterministic-json": "^1.0.5",

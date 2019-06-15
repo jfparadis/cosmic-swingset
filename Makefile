@@ -76,3 +76,17 @@ install-setup-client:
 	ve3-client/bin/pip install --editable ./ag-setup-solo
 run-setup-client:
 	ve3-client/bin/ag-setup-solo
+
+AGC = /home/warner/bindmounts/trees/cosmic-swingset/lib/ag-chain-cosmos
+warner-setup:
+	rm -rf node_modules package-lock.json
+	npm install
+	-rm -r ~/.ag-chain-cosmos
+	$(AGC) init --chain-id=agoric
+	rm -rf t1
+	bin/ag-solo init t1
+	$(AGC) add-genesis-account `cat t1/ag-cosmos-helper-address` 1000agtoken
+	$(MAKE) set-local-gci-ingress
+	@echo "export const soloKey = '`cat t1/ag-cosmos-helper-address`';" >demo1/solo-key.js
+	@echo "agc start"
+	@echo "(cd t1 && ../bin/ag-solo start)"
