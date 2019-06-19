@@ -71,9 +71,9 @@ go.sum: go.mod
 	GO111MODULE=on go mod verify
 
 start-ag-solo:
-	-rm -r t1
-	bin/ag-solo init t1
-	cd t1 && ../bin/ag-solo start
+	rm -rf solo/t1
+	bin/ag-solo init solo/t1
+	cd solo/t1 && ../../bin/ag-solo start
 
 show-local-gci:
 	@./calc-gci.js ~/.ag-cosmos-chain/config/genesis.json
@@ -103,32 +103,17 @@ run-setup-client:
 	ve3-client/bin/ag-setup-solo
 
 AGC = ./lib/ag-chain-cosmos
-localdemo2-setup:
-	-rm -r ~/.ag-chain-cosmos
-	-rm ag-cosmos-chain-state.json
-	$(AGC) init --chain-id=agoric
+localdemo3-setup:
+	rm -rf ~/.ag-chain-cosmos ag-cosmos-chain-state.json
+	$(AGC) init --chain-id=$(CHAIN_ID)
 	rm -rf t1
 	bin/ag-solo init t1
-	$(AGC) add-genesis-account `cat t1/ag-cosmos-helper-address` 1000agtoken
+	$(AGC) add-genesis-account `cat t1/ag-cosmos-helper-address` 1000agmedallion
 	$(MAKE) set-local-gci-ingress
-	@echo "export const soloKey = '`cat t1/ag-cosmos-helper-address`';" >lib/ag-solo/vats/solo-key.js
-	@echo "ROLE=localchain BOOT_ADDRESS=\`cat t1/ag-cosmos-helper-address\` agc start"
-	@echo "(cd t1 && ../bin/ag-solo start --role=localclient)"
+	$(MAKE) -n localdemo3-run-chain localdemo3-run-client
 
-localdemo2-run-chain:
-	ROLE=localchain BOOT_ADDRESS=`cat t1/ag-cosmos-helper-address` $(AGC) start
-localdemo2-run-client:
-	cd t1 && ../bin/ag-solo start --role=localclient
+localdemo3-run-chain:
+	BOOT_ADDRESS=`cat t1/ag-cosmos-helper-address` $(AGC) start
 
-run-chain:
-	rm -rf ~/.ag-chain-cosmos
-	lib/ag-chain-cosmos init --chain-id $(CHAIN_ID)
-	rm -rf t1 && bin/ag-solo init t1
-	lib/ag-chain-cosmos add-genesis-account `cat t1/ag-cosmos-helper-address` 1000agmedallion
-	BOOT_ADDRESS=`cat t1/ag-cosmos-helper-address` lib/ag-chain-cosmos start
-
-run-client: set-local-gci-ingress
-	cd t1 && ../bin/ag-solo start --role=controller --role=client `cat ag-cosmos-helper-address`
-
-run-controller: set-local-gci-ingress
-	cd t1 && ../bin/ag-solo start --role=controller `cat ag-cosmos-helper-address`
+localdemo3-run-client:
+	cd t1 && ../bin/ag-solo start --role=client --role=controller `cat ag-cosmos-helper-address`
