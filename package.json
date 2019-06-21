@@ -1,6 +1,6 @@
 {
   "name": "cosmic-swingset",
-  "version": "0.7.4",
+  "version": "0.7.5-infixBang.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -15,9 +15,12 @@
   "author": "Agoric",
   "license": "Apache-2.0",
   "dependencies": {
+    "@agoric/babel-parser": "^7.4.5-infixBang.1",
     "@agoric/ertp": "^0.0.7",
     "@agoric/evaluate": "file:agoric-evaluate-0.0.1.tgz",
-    "@agoric/swingset-vat": "^0.0.14",
+    "@agoric/swingset-vat": "file:agoric-swingset-vat-0.0.14.tgz",
+    "@babel/generator": "^7.4.4",
+    "@babel/traverse": "^7.4.5",
     "@iarna/toml": "^2.2.3",
     "bindings": "^1.2.1",
     "deterministic-json": "^1.0.5",
@@ -27,6 +30,7 @@
     "minimist": "^1.2.0",
     "morgan": "^1.9.1",
     "node-fetch": "^2.6.0",
+    "ses": "file:ses-0.5.0-infixBang.tgz",
     "ws": "^7.0.0"
   },
   "devDependencies": {
