@@ -1,33 +1,133 @@
-.App {
+* {
+  padding: 0;
+  margin: 0;
+}
+
+h1 {
   text-align: center;
+  margin-top: 40px;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
-  pointer-events: none;
+.container {
+  display: grid;
+  grid-template-columns: 506px auto;
+  grid-template-rows: 506px;
+  grid-column-gap: 40px;
+  padding: 40px;
+  box-sizing: border-box;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.left {
+  grid-column: 1;
+  grid-row: 1;
 }
 
-.App-link {
-  color: #61dafb;
+.right {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-row-gap: 8px;
 }
 
-@keyframes App-logo-spin {
+.gallery {
+  grid-row: 2;
+  border: 3px solid black;
+  background: repeating-linear-gradient(-45deg, grey, grey 5px, white 5px, white 10px);
+  height: 500px;
+  width: 500px;
+  line-height: 0;
+}
+
+.pixel {
+  height: 50px;
+  width: 50px;
+  display: inline-block;
+  transition: background-color 2s;
+}
+
+.updated {
+  animation-name: spin;
+  animation-duration: 2000ms;
+  animation-iteration-count: 1;
+}
+
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+.help {
+  border-bottom: 1px solid black;
+}
+
+#history {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.history {
+  border-spacing: 0;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.history>div {
+  display: grid;
+  grid-template-columns: 100px auto;
+  grid-column-gap: 0;
+}
+
+.history>.command-line {
+  background: #DBFAF9;
+  font-weight: 500;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.history>.history-line {
+  padding-bottom: 12px;
+}
+
+.history>div> :first-child {
+  text-align: right;
+  color: #424248;
+}
+
+.history>div> :nth-child(2) {
+  text-align: left;
+  padding-left: 8px;
+  /* Overflow must be set (to auto or hidden) to force the word break to apply.
+      The word-wrap is required to wrap a long value with no spaces. */
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+#command-entry {
+  grid-template-columns: 100px auto 60px;
+  min-width: 260px;
+  align-items: baseline;
+}
+
+/* For command entry and eval button. */
+input {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  width: 100%;
+  border: 1px solid gray;
+}
+
+input[type=text]:focus {
+  border-color: #428f87;
+}
+
+input[type=submit] {
+  color: white;
+  background: #428f87;
+  border-radius: 4px;
 }
