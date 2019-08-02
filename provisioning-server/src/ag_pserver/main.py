@@ -73,16 +73,18 @@ class ConfigElement(Element):
         config = f.read()
         gr = '/usr/src/app/lib/git-revision.txt'
         if os.path.exists(gr):
-          f = open()
+          f = open(gr)
           meta['package_git'] = f.read().strip()
         else:
-          f = os.popen('git describe --always --dirty')
-          meta['package_git'] = f.read().strip()
+          f = os.popen('git rev-parse --short HEAD')
+          sha = f.read().strip()
+          f = os.popen('git diff --quiet || echo -dirty')
+          meta['package_git'] = sha + f.read().strip()
 
-        pj = '/usr/src/app/lib/package.json'
+        pj = '/usr/src/app/package.json'
         pjson = {}
         if os.path.exists(pj):
-          f = open('/usr/src/app/lib/package.json')
+          f = open(pj)
           pjson = json.load(f)
         else:
           pjpath = None
@@ -95,7 +97,7 @@ class ConfigElement(Element):
               pjson = json.load(f)
               break
             pj = os.path.join(os.path.dirname(pjpath), '../package.json')
-            pj = os.path.abspath(np)
+            pj = os.path.abspath(pj)
 
         meta['package_version'] = pjson.get('version', 'unknown')
         meta['package_name'] = pjson.get('name', 'cosmic-swingset')
@@ -186,7 +188,8 @@ class RequestCode(resource.Resource):
                 '--yes', '--chain-id', config['chainName'],
                 '--node',
                 'tcp://' + config['rpcAddrs'][0], # TODO: rotate on failure
-                '--home', os.environ['HOME'] + '/controller/ag-cosmos-helper-statedir'
+                '--home', os.environ['HOME'] + '/controller/ag-cosmos-helper-statedir',
+                '--broadcast-mode', 'block' # Don't return until committed.
                 ])
             code = yield d
             print('transfer of ' + INITIAL_TOKEN + ' returned ' + str(code))
