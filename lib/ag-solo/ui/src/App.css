@@ -77,7 +77,7 @@ h1 {
   font-weight: 400;
 }
 
-.history>div {
+.history>* {
   display: grid;
   grid-template-columns: 100px auto;
   grid-column-gap: 0;
@@ -94,12 +94,12 @@ h1 {
   padding-bottom: 12px;
 }
 
-.history>div> :first-child {
+.history>*> :first-child {
   text-align: right;
   color: #424248;
 }
 
-.history>div> :nth-child(2) {
+.history>*> :nth-child(2) {
   text-align: left;
   padding-left: 8px;
   /* Overflow must be set (to auto or hidden) to force the word break to apply.
