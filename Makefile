@@ -3,12 +3,23 @@ TAG := $(shell test ! -f package.json || sed -ne 's/.*"version": "\(.*\)".*/\1/p
 CHAIN_ID = agoric
 INITIAL_TOKENS = 1000agmedallion
 
+ifneq ("$(wildcard /vagrant)","")
+# Within a VM.  We need to get to the outside.
+INSPECT_ADDRESS = 0.0.0.0
+else
+# On a host machine.  Stay here.
+INSPECT_ADDRESS = 127.0.0.1
+endif
+
+BREAK_CHAIN = false
+NODE_DEBUG = node --inspect-port=$(INSPECT_ADDRESS):9229
+
 include Makefile.ledger
 all: build install
 
 scenario0-setup:
-	-rm -r ~/.ag-chain-cosmos
-	-rm ag-cosmos-chain-state.json
+	rm -rf ~/.ag-chain-cosmos
+	rm -f ag-cosmos-chain-state.json
 	python3 -mvenv ve3
 	ve3/bin/pip install setup-solo/
 
@@ -28,9 +39,10 @@ scenario1-run-client: scenario0-run-client
 
 AGC = ./lib/ag-chain-cosmos
 scenario2-setup:
-	-rm -r ~/.ag-chain-cosmos
-	-rm ag-cosmos-chain-state.json
+	rm -rf ~/.ag-chain-cosmos
+	rm -f ag-cosmos-chain-state.json
 	$(AGC) init --chain-id=$(CHAIN_ID)
+	./setup/set-json.js ~/.ag-chain-cosmos/config/genesis.json --agoric-genesis-overrides
 	rm -rf t1
 	bin/ag-solo init t1
 	$(AGC) add-genesis-account `cat t1/ag-cosmos-helper-address` $(INITIAL_TOKENS)
@@ -39,13 +51,14 @@ scenario2-setup:
 	@echo "(cd t1 && ../bin/ag-solo start --role=two_client)"
 
 scenario2-run-chain:
-	ROLE=two_chain BOOT_ADDRESS=`cat t1/ag-cosmos-helper-address` $(AGC) start
+	ROLE=two_chain BOOT_ADDRESS=`cat t1/ag-cosmos-helper-address` $(NODE_DEBUG) `$(BREAK_CHAIN) && echo --inspect-brk` $(AGC) start
 scenario2-run-client:
 	cd t1 && ../bin/ag-solo start --role=two_client
 
 scenario3-setup:
 	rm -rf t1
-	bin/ag-solo init t1
+	bin/ag-solo init t1 --egresses=none
+	@echo 'Ignore advice above, instead run `make scenario3-run-client`'
 scenario3-run-client:
 	cd t1 && ../bin/ag-solo start --role=three_client
 scenario3-run-chain:
@@ -108,7 +121,7 @@ docker-push-setup-solo:
 
 compile-go: go.sum
 	GO111MODULE=on go build -v -buildmode=c-shared -o lib/libagcosmosdaemon.so lib/agcosmosdaemon.go
-	-install_name_tool -id `pwd`/lib/libagcosmosdaemon.so lib/libagcosmosdaemon.so
+	test "`uname -s 2>/dev/null`" != Darwin || install_name_tool -id `pwd`/lib/libagcosmosdaemon.so lib/libagcosmosdaemon.so
 
 build: compile-go
 
@@ -125,7 +138,7 @@ go.sum: go.mod
 	GO111MODULE=on go mod verify
 
 start-ag-solo:
-	-rm -r t1
+	rm -rf t1
 	bin/ag-solo init t1
 	cd t1 && ../bin/ag-solo start
 
@@ -136,7 +149,7 @@ set-local-gci-ingress:
 	cd t1 && ../bin/ag-solo set-gci-ingress --chainID=$(CHAIN_ID) `../calc-gci.js ~/.ag-chain-cosmos/config/genesis.json` `../calc-rpcport.js ~/.ag-chain-cosmos/config/config.toml`
 
 start-ag-solo-connected-to-local:
-	-rm -r t1
+	rm -rf t1
 	bin/ag-solo init t1
 	$(MAKE) set-local-gci-ingress
 	cd t1 && ../bin/ag-solo start

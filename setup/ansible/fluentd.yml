@@ -9,9 +9,7 @@
   gather_facts: no
   strategy: free
   vars:
-    - service: ag-chain-cosmos
+    - service: "ag-chain-cosmos"
     - units: "{{ hostvars[inventory_hostname]['units'] | default([service + '.service']) }}"
-    - JOURNALBEAT_BINARY: "{{lookup('env', 'GOPATH')}}/bin/journalbeat"
   roles:
-    - logzio
-
+    - fluentd
