@@ -43,22 +43,42 @@ h1 {
   height: 50px;
   width: 50px;
   display: inline-block;
-  transition: background-color 2s;
+  transition: background-color 2000ms;
 }
 
-.updated {
-  animation-name: spin;
+.updated0 {
+  animation-name: spin0;
   animation-duration: 2000ms;
   animation-iteration-count: 1;
 }
 
-@keyframes spin {
+.updated1 {
+  animation-name: spin1;
+  animation-duration: 2000ms;
+  animation-iteration-count: 1;
+}
+
+@keyframes spin0 {
   from {
     transform: rotate(0deg);
+    z-index: 1;
   }
 
   to {
     transform: rotate(360deg);
+    z-index: 0;
+  }
+}
+
+@keyframes spin1 {
+  from {
+    transform: rotate(0deg);
+    z-index: 1;
+  }
+
+  to {
+    transform: rotate(360deg);
+    z-index: 0;
   }
 }
 
