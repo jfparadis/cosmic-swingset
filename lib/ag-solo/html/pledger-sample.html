@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="mimimum-scale=1, initial-scale=1, width=device-width, height=device-height, shrink-to-fit=no" />
+    <title>Pledger Sample Dapp</title>
+  </head>
+
+  <body>
+    <h2>Pledger Sample Dapp</h2>
+
+    <p>Here is a little web interface that tests the Pledger-over-CapTP integration with localhost:8000.</p>
+
+    <textarea id="output" style="width: 100%; height: 500px"></textarea>
+
+    <script type="text/javascript" src="captp.umd.js"></script>
+    <script type="text/javascript">
+const { E, makeCapTP } = CapTP;
+const startSession = async getBootstrap => {
+  const log = msg => output.value += msg + '\n';
+  try {
+    log('Starting dapp');
+    await E(getBootstrap()).wait();
+    log('Pledger is ready, now continuing dapp');
+    const pledger = E(getBootstrap()).getPledger();
+    log('Get balances:');
+    log(JSON.stringify(await E(pledger).getBalances(), undefined, 2));
+    log('Done!');
+  } catch (e) {
+    console.error('Got error', e);
+    alert('Session error: ' + String(e));
+  }
+};
+createPledgerBridge(startSession);
+
+////////////////////////////////////////////////////
+// The rest of this file should be in '@pledger/bridge'.
+function createPledgerBridge(startSession, ourID = 'dapp', origin = 'http://localhost:8000') {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('src', `${origin}/pledger-bridge.html`);
+  iframe.setAttribute('hidden', 'hidden');
+
+  document.body.prepend(iframe);
+
+  const sendPledger = obj => {
+    iframe.contentWindow.postMessage(obj, "*");
+  };
+
+  let dispatch;
+  window.addEventListener('message', ev => {
+    if (origin !== ev.origin) {
+      return;
+    }
+    const obj = ev.data;
+    console.log('Pledger sent', obj);
+    switch (obj.type) {
+      case 'PLEDGER_DISCONNECTED':
+        dispatch = undefined;
+        break;
+      case 'PLEDGER_CONNECTED': {
+        let getBootstrap;
+        ({ dispatch, getBootstrap } = makeCapTP(ourID, sendPledger));
+        startSession(getBootstrap);
+        break;
+      }
+      default: {
+        if (dispatch) {
+          dispatch(obj);
+        }
+      }
+    }
+  });
+
+  iframe.addEventListener('load', ev => {
+    console.log('Pledger loaded');
+    sendPledger({ type: 'PLEDGER_CONNECT' });
+  });
+}
+    </script>
+  </body>
+</html>

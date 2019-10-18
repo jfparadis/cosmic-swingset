@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pledger Bridge</title>
+  </head>
+
+  <body>
+    <h2>Pledger Bridge</h2>
+
+    <p>No user interface should be looking at this window.  It is an internal
+      postMessage-to-WebSocket forwarder for the Pledger wallet in this ag-solo instance.</p>
+
+    <script type="text/javascript">
+let ws;
+const q = [];
+
+window.addEventListener('message', ev => {
+  const postJSON = parent === window
+  ? obj => console.log('Pledger bridge would post', obj)
+  : obj => parent.postMessage(obj, "*");
+
+  console.log('Pledger bridge received', ev.data);
+  switch (ev.data.type) {
+    case 'PLEDGER_CONNECT':
+      // Continue below.
+      break;
+    
+    case 'PLEDGER_DISCONNECT': {
+      q = [];
+      const oldWS = ws;
+      ws = undefined;
+      if (oldWS) {
+        oldWS.close();
+      }
+      return;
+    }
+
+    default: {
+      if (ws) {
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify(ev.data));
+        } else {
+          q.push(ev.data);
+        }
+      }
+      return;
+    }
+  }
+
+  const protocol = window.location.protocol.replace(/^http/, 'ws');
+  const socketEndpoint = `${protocol}//${window.location.host}/captp/pledger`;
+  ws = new WebSocket(socketEndpoint);
+
+  ws.addEventListener('open', () => {
+    console.log('Pledger WebSocket open');
+    while (q.length > 0) {
+      const obj = q.shift();
+      ws.send(JSON.stringify(obj));
+    }
+    postJSON({ type: 'PLEDGER_CONNECTED' });
+  });
+
+  ws.addEventListener('message', ev => {
+    // console.log('Pledger WebSocket received', ev.data);
+    const obj = JSON.parse(ev.data);
+    postJSON(obj);
+  });
+
+  ws.addEventListener('close', ev => {
+    console.log('Pledger WebSocket disconnected');
+    ws = undefined;
+    postJSON({type: 'PLEDGER_DISCONNECTED'});
+  });
+});
+
+console.log('Pledger bridge loaded');
+    </script>
+  </body>
+</html>
